@@ -1,0 +1,7 @@
+[package]
+name = "fastText"
+version = "0.1.0"
+authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
+
+[dependencies]
+

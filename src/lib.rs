@@ -1,25 +1,36 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
 
-fn install() -> std::process::Output {
+#[macro_use(c)]
+extern crate cute;
+
+fn s(v: &str) -> String {
+    v.to_string()
+}
+
+pub fn install() -> Vec<std::process::Output> {
+    const VERSION: &'static str = env!("CARGO_PKG_VERSION");
     if cfg!(target_os = "windows") {
-        Command::new("cmd")
-            .args(&["/C",
-                "wget https://github.com/facebookresearch/fastText/archive/v0.1.0.zip",
-                "unzip v0.1.0.zip",
-                "cd fastText-0.1.0",
-                "make"
-            ])
-            .output()
-            .expect("failed to execute process")
+        unimplemented!("Windows support not yet enabled")
     } else {
-        Command::new("sh")
-            .arg("-c")
-            .args(&["wget https://github.com/facebookresearch/fastText/archive/v0.1.0.zip",
-                "unzip v0.1.0.zip",
-                "cd fastText-0.1.0",
-                "make"])
-            .output()
-            .expect("failed to execute process")
+        let cmds = [
+            s("wget https://github.com/facebookresearch/fastText/archive/v0.1.0.zip"),
+            s("unzip v") + VERSION + ".zip",
+            s("cd fastText-") + VERSION + "; make",
+            s("mv fastText-") + VERSION + "/fasttext .",
+            s("rm -r fastText-") + VERSION,
+            s("rm v") + VERSION + ".zip"
+        ];
+        Command::new("sh").arg("-c").arg("rm fasttext"); // if fasttext exists, remove it
+        c![
+            Command::new("sh")
+                .arg("-c")
+                .arg(c)
+                .stdout(Stdio::piped())
+                .output()
+                .expect("failed to execute process"),
+
+            for c in cmds.iter()
+        ]
     }
 }
 
@@ -40,7 +51,24 @@ pub fn dump() {}
 #[cfg(test)]
 mod tests {
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn test_install() {
+        use std::process::{Command, Stdio};
+        use install;
+        let rv = install();
+        for r in rv.iter() {
+            println!("{}", String::from_utf8_lossy(&r.stdout));
+            println!("{}", String::from_utf8_lossy(&r.stderr));
+            assert!(r.status.success());
+        }
+
+        let r = Command::new("sh")
+            .arg("-c")
+            .arg("./fasttext")
+            .stdout(Stdio::piped())
+            .output()
+            .expect("failed to execute process");
+        println!("{}", String::from_utf8_lossy(&r.stdout));
+        println!("{}", String::from_utf8_lossy(&r.stderr));
+        assert_eq!(r.status.code(), Some(1)); // returns 127 if ./fasttext DNE
     }
 }

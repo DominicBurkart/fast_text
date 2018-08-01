@@ -4,6 +4,7 @@ use std::process::{Command, Output, Stdio};
 extern crate cute;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const DEBUG: bool = true;
 
 fn s(v: &str) -> String {
     v.to_string()
@@ -138,26 +139,27 @@ pub fn supervised() {
 ///  -qout               quantizing the classifier [0]
 ///  -dsub               size of each sub-vector [2]
 pub fn quantize(input: &str, output: &str) {
-    let s = s("quantize -input " + input + " -output ") + output;
+    let s = s("quantize -input ") + input + " -output " + output;
     let r = wrap_install(&s);
     unimplemented!()
 }
 
 
-/// Classify each line in an input file.
+/// Classify each line in an input file. Documentation from fastText:
 ///
 /// usage: fasttext predict[-prob] <model> <test-data> [<k>]
 ///
 ///  <model>      model filename
 ///  <test-data>  test data filename (if -, read from stdin)
 ///  <k>          (optional; 1 by default) predict top k labels
-pub fn predict(model: &str, inp: &str, k: u32) {
+pub fn predict(model: &str, inp: &str, k: u32) -> Vec<f64> {
     let s = s("predict ") + model + " " + inp + " " + &k.to_string();
     let r = wrap_install(&s);
-    unimplemented!()
+    c![p.parse::<f64>().unwrap(),
+     for p in String::from_utf8_lossy(&r.stdout).split("\n")]
 }
 
-/// Provides minimal functionality for generating skipgrams. Full documentation from fasttext:
+/// Provides minimal functionality for generating skipgrams. Full documentation from fastText:
 ///
 /// The following arguments are mandatory:
 ///  -input              training file path
@@ -252,17 +254,43 @@ pub fn cbow<'a>(input: &str, output: &'a str) -> &'a str {
 }
 
 
-/// Nearest neighbors. Full documentation from FastText:
+/// Nearest neighbors. Input of "words" are single words separated by spaces. Full documentation
+/// from FastText:
 ///
 /// usage: fasttext nn <model> <k>
 ///
 ///  <model>      model filename
 ///  <k>          (optional; 10 by default) predict top k labels
-pub fn nn() {
-    let r = wrap_install("todo");
-    unimplemented!()
+pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>>{
+    if DEBUG {println!("NN begun")};
+    let cmd = s("echo ") + words + " | ./fasttext nn " + model + " k";
+    let r = wrap_install(&cmd);
+    let stdout = String::from_utf8_lossy(&r.stdout);
+    let sm = "Query word? ";
+    let mut v0 = Vec::new();
+    if DEBUG {
+        println!("Beginning match iteration");
+        println!("stdout: {}", stdout);
+    }
+    for (m, _) in stdout.match_indices(sm) {
+        println!("Match found: {}", m);
+        let mut v1 = Vec::new();
+        let start = m + sm.len();
+        for l in stdout.split("\n") {
+            let lar: Vec<&str> = l.split(" ").collect();
+            if lar.len() == 2 {
+                v1.push((lar[0].to_string(), lar[1].parse::<f64>().unwrap()));
+            } else {
+                panic!("misformatted line in input: {}", l)
+            }
+        }
+        v0.push(v1);
+    }
+    v0
 }
 
+/// Documentation from fastText:
+///
 /// usage: fasttext analogies <model> <k>
 ///
 ///  <model>      model filename
@@ -294,5 +322,22 @@ mod tests {
         println!("{}", String::from_utf8_lossy(&r.stdout));
         println!("{}", String::from_utf8_lossy(&r.stderr));
         assert_eq!(r.status.code(), Some(1)); // returns 127 if ./fasttext DNE
+    }
+
+    #[test]
+    fn test_nn() {
+        use nn;
+        let out = nn("lesbian", "sample.bin", 10);
+        println!("{:?}", out);
+        assert_eq!(out.len(), 1); // number of words queried
+        assert_eq!(out[0].len(), 10); // k
+
+        let out = nn("lesbian gay", "sample.bin", 5);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].len(), 5);
+
+        let out = nn("lesbian gay bi", "sample.bin", 20);
+        assert_eq!(out.len(), 3);
+        assert_eq!(out[0].len(), 20);
     }
 }

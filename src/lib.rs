@@ -56,23 +56,144 @@ fn wrap_install(cmds: &str) -> Output {
     r
 }
 
+/// Minimal interface for the supervised learning algorithm. Documentation from fastText:
+///
+///The following arguments are mandatory:
+///  -input              training file path
+///  -output             output file path
+///
+///The following arguments are optional:
+///  -verbose            verbosity level [2]
+///
+///The following arguments for the dictionary are optional:
+///  -minCount           minimal number of word occurences [1]
+///  -minCountLabel      minimal number of label occurences [0]
+///  -wordNgrams         max length of word ngram [1]
+///  -bucket             number of buckets [2000000]
+///  -minn               min length of char ngram [0]
+///  -maxn               max length of char ngram [0]
+///  -t                  sampling threshold [0.0001]
+///  -label              labels prefix [__label__]
+///
+///The following arguments for training are optional:
+///  -lr                 learning rate [0.1]
+///  -lrUpdateRate       change the rate of updates for the learning rate [100]
+///  -dim                size of word vectors [100]
+///  -ws                 size of the context window [5]
+///  -epoch              number of epochs [5]
+///  -neg                number of negatives sampled [5]
+///  -loss               loss function {ns, hs, softmax} [softmax]
+///  -thread             number of threads [12]
+///  -pretrainedVectors  pretrained word vectors for supervised learning []
+///  -saveOutput         whether output params should be saved [0]
+///
+///The following arguments for quantization are optional:
+///  -cutoff             number of words and ngrams to retain [0]
+///  -retrain            finetune embeddings if a cutoff is applied [0]
+///  -qnorm              quantizing the norm separately [0]
+///  -qout               quantizing the classifier [0]
+///  -dsub               size of each sub-vector [2]
 pub fn supervised() {
     let r = wrap_install("todo");
     unimplemented!()
 }
 
-pub fn quantize(model: &str) {
-    let s = s("quantize -output ") + model;
+/// Minimal interface to shrink a model's memory requirements. Full interface from fastText:
+///
+///usage: fasttext quantize <args>
+///
+///The following arguments are mandatory:
+///  -input              training file path
+///  -output             output file path
+///
+///The following arguments are optional:
+///  -verbose            verbosity level [2]
+///
+///The following arguments for the dictionary are optional:
+///  -minCount           minimal number of word occurences [5]
+///  -minCountLabel      minimal number of label occurences [0]
+///  -wordNgrams         max length of word ngram [1]
+///  -bucket             number of buckets [2000000]
+///  -minn               min length of char ngram [3]
+///  -maxn               max length of char ngram [6]
+///  -t                  sampling threshold [0.0001]
+///  -label              labels prefix [__label__]
+///
+///The following arguments for training are optional:
+///  -lr                 learning rate [0.05]
+///  -lrUpdateRate       change the rate of updates for the learning rate [100]
+///  -dim                size of word vectors [100]
+///  -ws                 size of the context window [5]
+///  -epoch              number of epochs [5]
+///  -neg                number of negatives sampled [5]
+///  -loss               loss function {ns, hs, softmax} [ns]
+///  -thread             number of threads [12]
+///  -pretrainedVectors  pretrained word vectors for supervised learning []
+///  -saveOutput         whether output params should be saved [0]
+///
+///The following arguments for quantization are optional:
+///  -cutoff             number of words and ngrams to retain [0]
+///  -retrain            finetune embeddings if a cutoff is applied [0]
+///  -qnorm              quantizing the norm separately [0]
+///  -qout               quantizing the classifier [0]
+///  -dsub               size of each sub-vector [2]
+pub fn quantize(input: &str, output: &str) {
+    let s = s("quantize -input " + input + " -output ") + output;
     let r = wrap_install(&s);
     unimplemented!()
 }
 
+
+/// Classify each line in an input file.
+///
+/// usage: fasttext predict[-prob] <model> <test-data> [<k>]
+///
+///  <model>      model filename
+///  <test-data>  test data filename (if -, read from stdin)
+///  <k>          (optional; 1 by default) predict top k labels
 pub fn predict(model: &str, inp: &str, k: u32) {
     let s = s("predict ") + model + " " + inp + " " + &k.to_string();
     let r = wrap_install(&s);
     unimplemented!()
 }
 
+/// Provides minimal functionality for generating skipgrams. Full documentation from fasttext:
+///
+/// The following arguments are mandatory:
+///  -input              training file path
+///  -output             output file path
+///
+///The following arguments are optional:
+///  -verbose            verbosity level [2]
+///
+///The following arguments for the dictionary are optional:
+///  -minCount           minimal number of word occurences [5]
+///  -minCountLabel      minimal number of label occurences [0]
+///  -wordNgrams         max length of word ngram [1]
+///  -bucket             number of buckets [2000000]
+///  -minn               min length of char ngram [3]
+///  -maxn               max length of char ngram [6]
+///  -t                  sampling threshold [0.0001]
+///  -label              labels prefix [__label__]
+///
+///The following arguments for training are optional:
+///  -lr                 learning rate [0.05]
+///  -lrUpdateRate       change the rate of updates for the learning rate [100]
+///  -dim                size of word vectors [100]
+///  -ws                 size of the context window [5]
+///  -epoch              number of epochs [5]
+///  -neg                number of negatives sampled [5]
+///  -loss               loss function {ns, hs, softmax} [ns]
+///  -thread             number of threads [12]
+///  -pretrainedVectors  pretrained word vectors for supervised learning []
+///  -saveOutput         whether output params should be saved [0]
+///
+///The following arguments for quantization are optional:
+///  -cutoff             number of words and ngrams to retain [0]
+///  -retrain            finetune embeddings if a cutoff is applied [0]
+///  -qnorm              quantizing the norm separately [0]
+///  -qout               quantizing the classifier [0]
+///  -dsub               size of each sub-vector [2]
 pub fn skipgram<'a>(input: &str, output: &'a str) -> &'a str {
     let s = s("skipgram -input ") + input + " -output " + output;
     if wrap_install(&s).status.success() {
@@ -82,17 +203,71 @@ pub fn skipgram<'a>(input: &str, output: &'a str) -> &'a str {
     }
 }
 
+
+/// Provides minimal functionality for generating a continuous bag of words model. Documentation
+/// from fastText:
+///
+/// The following arguments are mandatory:
+///  -input              training file path
+///  -output             output file path
+///
+///The following arguments are optional:
+///  -verbose            verbosity level [2]
+///
+///The following arguments for the dictionary are optional:
+///  -minCount           minimal number of word occurences [5]
+///  -minCountLabel      minimal number of label occurences [0]
+///  -wordNgrams         max length of word ngram [1]
+///  -bucket             number of buckets [2000000]
+///  -minn               min length of char ngram [3]
+///  -maxn               max length of char ngram [6]
+///  -t                  sampling threshold [0.0001]
+///  -label              labels prefix [__label__]
+///
+///The following arguments for training are optional:
+///  -lr                 learning rate [0.05]
+///  -lrUpdateRate       change the rate of updates for the learning rate [100]
+///  -dim                size of word vectors [100]
+///  -ws                 size of the context window [5]
+///  -epoch              number of epochs [5]
+///  -neg                number of negatives sampled [5]
+///  -loss               loss function {ns, hs, softmax} [ns]
+///  -thread             number of threads [12]
+///  -pretrainedVectors  pretrained word vectors for supervised learning []
+///  -saveOutput         whether output params should be saved [0]
+///
+///The following arguments for quantization are optional:
+///  -cutoff             number of words and ngrams to retain [0]
+///  -retrain            finetune embeddings if a cutoff is applied [0]
+///  -qnorm              quantizing the norm separately [0]
+///  -qout               quantizing the classifier [0]
+///  -dsub               size of each sub-vector [2]
+pub fn cbow<'a>(input: &str, output: &'a str) -> &'a str {
+    let s = s("cbow -input ") + input + " -output " + output;
+    if wrap_install(&s).status.success() {
+        output
+    } else {
+        panic!("Cbow failed with given input: {}", s)
+    }
+}
+
+
+/// Nearest neighbors. Full documentation from FastText:
+///
+/// usage: fasttext nn <model> <k>
+///
+///  <model>      model filename
+///  <k>          (optional; 10 by default) predict top k labels
 pub fn nn() {
     let r = wrap_install("todo");
     unimplemented!()
 }
 
+/// usage: fasttext analogies <model> <k>
+///
+///  <model>      model filename
+///  <k>          (optional; 10 by default) predict top k labels
 pub fn analogies() {
-    let r = wrap_install("todo");
-    unimplemented!()
-}
-
-pub fn dump() {
     let r = wrap_install("todo");
     unimplemented!()
 }

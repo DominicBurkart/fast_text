@@ -1,6 +1,7 @@
-
 #[macro_use(c)]
 extern crate cute;
+
+use std::path::Path;
 use std::process::{Command, Output, Stdio};
 
 
@@ -42,11 +43,11 @@ pub fn install() -> Vec<Output> {
 fn wrap_install(cmds: &str) -> Output {
     let r = Command::new("sh")
         .arg("-c")
-        .arg(s("./fasttext ") + cmds)
+        .arg(s("fasttext ") + cmds)
         .stdout(Stdio::piped())
         .output()
         .expect("failed to execute process");
-    if r.status.code() == Some(127) { // returns 127 if ./fasttext DNE
+    if r.status.code() == Some(127) && !Path::new("fasttext").exists() {
         let inst_resps = install();
         for ir in inst_resps.iter() {
             assert!(ir.status.success()); // panic if installation failed
@@ -324,10 +325,9 @@ pub fn analogies() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::path::Path;
     use std::{thread, time};
     use std::process::{Command, Stdio};
+    use super::*;
 
     static mut INSTALLED: bool = false;
     static mut SAMPLE_SKIPGRAM: bool = false;
@@ -342,7 +342,7 @@ mod tests {
     }
 
     fn inst() {
-        check_exists("fasttext", ||{install();});
+        check_exists("fasttext", || { install(); });
     }
 
     fn samp() {
@@ -407,5 +407,4 @@ mod tests {
         assert_eq!(out.len(), 4);
         assert_eq!(out[0].len(), 1);
     }
-
 }

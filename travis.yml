@@ -1,0 +1,30 @@
+sudo: required
+
+os: linux
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+cache:
+  - cargo
+  - apt
+addons:
+  apt:
+    packages:
+      - binutils-dev
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+
+script:
+- cargo build
+- cargo bench
+- cargo test
+- |
+      if [ [ "$TRAVIS_OS_NAME" == "linux"] && [ "$TRAVIS_OS_NAME" == "stable" ] ]; then
+        cargo install cargo-kcov
+        cargo kcov --print-install-kcov-sh | sh
+        cargo run -- kcov --verbose --no-clean-rebuild --lib --coveralls
+        bash <(curl -s https://codecov.io/bash)
+      fi

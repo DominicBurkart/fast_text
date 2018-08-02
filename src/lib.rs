@@ -261,10 +261,23 @@ pub fn cbow<'a>(input: &str, output: &'a str) -> &'a str {
 ///
 ///  <model>      model filename
 ///  <k>          (optional; 10 by default) predict top k labels
-pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>>{
-    if DEBUG {println!("NN begun")};
-    let cmd = s("echo ") + words + " | ./fasttext nn " + model + " k";
-    let r = wrap_install(&cmd);
+pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
+    if DEBUG { println!("NN begun") };
+    let cmd = s("echo ") + words + " | ./fasttext nn " + model + " " + &k.to_string();
+    if DEBUG { println!("cmd: {}", cmd); }
+    let r = Command::new("sh")
+        .arg("-c")
+        .arg(cmd)
+        .stdout(Stdio::piped())
+        .output()
+        .expect("failed to execute process");
+    if r.status.code() == Some(127) { // returns 127 if ./fasttext DNE
+        let ir = install();
+        for o in ir.iter() {
+            if !r.status.success() { panic!("Missing files / executable in call to nn"); }
+        }
+    }
+    if DEBUG { println!("{:?}", r); }
     let stdout = String::from_utf8_lossy(&r.stdout);
     let sm = "Query word? ";
     let mut v0 = Vec::new();
@@ -272,19 +285,27 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>>{
         println!("Beginning match iteration");
         println!("stdout: {}", stdout);
     }
-    for (m, _) in stdout.match_indices(sm) {
-        println!("Match found: {}", m);
+    for (start, _) in stdout.match_indices(sm) {
+        if DEBUG { println!("Match found: {}", start); }
         let mut v1 = Vec::new();
-        let start = m + sm.len();
-        for l in stdout.split("\n") {
+        let mut first = true;
+        for l in stdout[start..].split("\n") {
             let lar: Vec<&str> = l.split(" ").collect();
+            if DEBUG { println!("{:?}", lar); }
             if lar.len() == 2 {
                 v1.push((lar[0].to_string(), lar[1].parse::<f64>().unwrap()));
+            } else if lar.len() == 4 && first {
+                v1.push((lar[2].to_string(), lar[3].parse::<f64>().unwrap()));
+                first = false;
+            } else if l == "Query word? " || (lar.len() == 4 && !first) {
+                break;
             } else {
-                panic!("misformatted line in input: {}", l)
+                panic!("misformatted line in input: {}", l);
             }
         }
-        v0.push(v1);
+        if v1.len() > 0 {
+            v0.push(v1);
+        }
     }
     v0
 }
@@ -322,22 +343,47 @@ mod tests {
         println!("{}", String::from_utf8_lossy(&r.stdout));
         println!("{}", String::from_utf8_lossy(&r.stderr));
         assert_eq!(r.status.code(), Some(1)); // returns 127 if ./fasttext DNE
+        sample_skipgram();
+    }
+
+    /// generate a skipgram model for testing things like the nearest neighbor function.
+    fn sample_skipgram() {
+        use std::process::{Command, Stdio};
+        let r = Command::new("sh")
+            .arg("-c")
+            .arg("./fasttext skipgram -input sample_text.txt -output sample")
+            .stdout(Stdio::piped())
+            .output()
+            .expect("failed to execute process");
+        println!("{}", String::from_utf8_lossy(&r.stdout));
+        println!("{}", String::from_utf8_lossy(&r.stderr));
+        assert_eq!(r.status.code(), Some(0)); // returns 127 if ./fasttext DNE
     }
 
     #[test]
     fn test_nn() {
         use nn;
+
+        sample_skipgram();
+
         let out = nn("lesbian", "sample.bin", 10);
         println!("{:?}", out);
         assert_eq!(out.len(), 1); // number of words queried
         assert_eq!(out[0].len(), 10); // k
 
         let out = nn("lesbian gay", "sample.bin", 5);
+        println!("{:?}", out);
         assert_eq!(out.len(), 2);
         assert_eq!(out[0].len(), 5);
 
-        let out = nn("lesbian gay bi", "sample.bin", 20);
+        let out = nn("lesbian gay bisexual", "sample.bin", 8);
+        println!("{:?}", out);
         assert_eq!(out.len(), 3);
-        assert_eq!(out[0].len(), 20);
+        assert_eq!(out[0].len(), 8);
+
+        let out = nn("lesbian gay bisexual transgender", "sample.bin", 1);
+        println!("{:?}", out);
+        assert_eq!(out.len(), 4);
+        assert_eq!(out[0].len(), 1);
     }
 }

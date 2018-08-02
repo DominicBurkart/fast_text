@@ -512,7 +512,6 @@ mod tests {
         println!("Generated skipgram model: {}", model);
     }
 
-    #[test]
     fn test_nn() {
         samp();
 
@@ -626,28 +625,9 @@ mod tests {
     }
 
     #[test]
-    fn test_skipgram() {
-        for _ in 0..5 { // concurrent calls to the fasttext binary in testing can cause it to fail.
-            let r = panic::catch_unwind(||{test_embedding(min_skipgram, skipgram, "test_min_skipgram", "test_skipgram")});
-            if r.is_err() {
-                println!("Test_embedding panicked. Trying again in a minute.");
-                thread::sleep(time::Duration::from_secs(120));
-            } else {
-                break;
-            }
-        }
-    }
-
-    #[test]
-    fn test_cbow() {
-        for _ in 0..5 { // concurrent calls to the fasttext binary in testing can cause it to fail.
-            let r = panic::catch_unwind(||{test_embedding(min_cbow, cbow, "test_min_cbow", "test_cbow")});
-            if r.is_err() {
-                println!("Test_embedding panicked. Trying again in a minute.");
-                thread::sleep(time::Duration::from_secs(120));
-            } else {
-                break;
-            }
-        }
+    fn suite() {
+        test_nn(); // fails if nearest neighbors doesn't work.
+        test_embedding(min_skipgram, skipgram, "test_min_skipgram", "test_skipgram");
+        test_embedding(min_cbow, cbow, "test_min_cbow", "test_cbow");
     }
 }

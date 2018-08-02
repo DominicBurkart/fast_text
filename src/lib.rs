@@ -1,6 +1,8 @@
 #[macro_use(c)]
 extern crate cute;
 
+use std::{thread, time};
+use std::collections::HashMap;
 use std::path::Path;
 use std::process::{Command, Output, Stdio};
 
@@ -161,6 +163,114 @@ pub fn predict(model: &str, inp: &str, k: u32) -> Vec<f64> {
      for p in String::from_utf8_lossy(&r.stdout).split("\n")]
 }
 
+
+/// Helper function used to unspool arguments. S is a string with the primary fastText command
+/// (e.g. "skipgram") and args are the named arguments to be passed to it, with keys as the
+/// argument tag and values as the argument value.
+fn gen_mod<'a>(mut s: String, args: &HashMap<&str, &'a str>) {
+    for k in args.keys() {
+        s = s + " -" + k + " " + args.get(k).unwrap();
+    }
+    if !wrap_install(&s).status.success() {
+        panic!("Gen_mod failed with given input: {}", s)
+    }
+}
+
+/// Provides functionality for generating skipgrams.
+///
+/// Include argument names as HashMap keys and argument values as HashMap values, e.g.:
+/// "input" : "sample_text.txt"
+/// "output" : "sample"
+///
+/// Documentation from fastText:
+///
+///
+/// The following arguments are mandatory:
+///  -input              training file path
+///  -output             output file path
+///
+///The following arguments are optional:
+///  -verbose            verbosity level [2]
+///
+///The following arguments for the dictionary are optional:
+///  -minCount           minimal number of word occurences [5]
+///  -minCountLabel      minimal number of label occurences [0]
+///  -wordNgrams         max length of word ngram [1]
+///  -bucket             number of buckets [2000000]
+///  -minn               min length of char ngram [3]
+///  -maxn               max length of char ngram [6]
+///  -t                  sampling threshold [0.0001]
+///  -label              labels prefix [__label__]
+///
+///The following arguments for training are optional:
+///  -lr                 learning rate [0.05]
+///  -lrUpdateRate       change the rate of updates for the learning rate [100]
+///  -dim                size of word vectors [100]
+///  -ws                 size of the context window [5]
+///  -epoch              number of epochs [5]
+///  -neg                number of negatives sampled [5]
+///  -loss               loss function {ns, hs, softmax} [ns]
+///  -thread             number of threads [12]
+///  -pretrainedVectors  pretrained word vectors for supervised learning []
+///  -saveOutput         whether output params should be saved [0]
+///
+///The following arguments for quantization are optional:
+///  -cutoff             number of words and ngrams to retain [0]
+///  -retrain            finetune embeddings if a cutoff is applied [0]
+///  -qnorm              quantizing the norm separately [0]
+///  -qout               quantizing the classifier [0]
+///  -dsub               size of each sub-vector [2]
+pub fn skipgram(args: &HashMap<&str, &str>) {
+    gen_mod(s("skipgram"), args);
+}
+
+/// Provides functionality for generating a continuous bag of words model.
+///
+/// Include argument names as HashMap keys and argument values as HashMap values, e.g.:
+/// "input" : "sample_text.txt"
+/// "output" : "sample"
+///
+/// Documentation from fastText:
+///
+/// The following arguments are mandatory:
+///  -input              training file path
+///  -output             output file path
+///
+///The following arguments are optional:
+///  -verbose            verbosity level [2]
+///
+///The following arguments for the dictionary are optional:
+///  -minCount           minimal number of word occurences [5]
+///  -minCountLabel      minimal number of label occurences [0]
+///  -wordNgrams         max length of word ngram [1]
+///  -bucket             number of buckets [2000000]
+///  -minn               min length of char ngram [3]
+///  -maxn               max length of char ngram [6]
+///  -t                  sampling threshold [0.0001]
+///  -label              labels prefix [__label__]
+///
+///The following arguments for training are optional:
+///  -lr                 learning rate [0.05]
+///  -lrUpdateRate       change the rate of updates for the learning rate [100]
+///  -dim                size of word vectors [100]
+///  -ws                 size of the context window [5]
+///  -epoch              number of epochs [5]
+///  -neg                number of negatives sampled [5]
+///  -loss               loss function {ns, hs, softmax} [ns]
+///  -thread             number of threads [12]
+///  -pretrainedVectors  pretrained word vectors for supervised learning []
+///  -saveOutput         whether output params should be saved [0]
+///
+///The following arguments for quantization are optional:
+///  -cutoff             number of words and ngrams to retain [0]
+///  -retrain            finetune embeddings if a cutoff is applied [0]
+///  -qnorm              quantizing the norm separately [0]
+///  -qout               quantizing the classifier [0]
+///  -dsub               size of each sub-vector [2]
+pub fn cbow(args: &HashMap<&str, &str>) {
+    gen_mod(s("cbow"), args);
+}
+
 /// Provides minimal functionality for generating skipgrams. Full documentation from fastText:
 ///
 /// The following arguments are mandatory:
@@ -198,12 +308,12 @@ pub fn predict(model: &str, inp: &str, k: u32) -> Vec<f64> {
 ///  -qnorm              quantizing the norm separately [0]
 ///  -qout               quantizing the classifier [0]
 ///  -dsub               size of each sub-vector [2]
-pub fn skipgram<'a>(input: &str, output: &'a str) -> &'a str {
-    let s = s("skipgram -input ") + input + " -output " + output;
-    if wrap_install(&s).status.success() {
-        output
+pub fn min_skipgram(input: &str, output: &str) -> String {
+    let st = s("skipgram -input ") + input + " -output " + output;
+    if wrap_install(&st).status.success() {
+        s(output) + ".bin"
     } else {
-        panic!("Skipgram failed with given input: {}", s)
+        panic!("Min_skipgram failed with given input: {}", st)
     }
 }
 
@@ -246,12 +356,12 @@ pub fn skipgram<'a>(input: &str, output: &'a str) -> &'a str {
 ///  -qnorm              quantizing the norm separately [0]
 ///  -qout               quantizing the classifier [0]
 ///  -dsub               size of each sub-vector [2]
-pub fn cbow<'a>(input: &str, output: &'a str) -> &'a str {
-    let s = s("cbow -input ") + input + " -output " + output;
-    if wrap_install(&s).status.success() {
-        output
+pub fn min_cbow(input: &str, output: &str) -> String {
+    let st = s("cbow -input ") + input + " -output " + output;
+    if wrap_install(&st).status.success() {
+        s(output) + ".bin"
     } else {
-        panic!("Cbow failed with given input: {}", s)
+        panic!("Cbow failed with given input: {}", st)
     }
 }
 
@@ -325,20 +435,45 @@ pub fn analogies() {
 
 #[cfg(test)]
 mod tests {
-    use std::{thread, time};
-    use std::process::{Command, Stdio};
-    use super::*;
+    extern crate kolmogorov_smirnov as ks;
 
-    static mut INSTALLED: bool = false;
-    static mut SAMPLE_SKIPGRAM: bool = false;
+    use std::collections::HashSet;
+    use super::*;
 
     fn check_exists(file: &str, or: fn()) {
         if !Path::new(file).exists() {
-            thread::sleep(time::Duration::from_secs(55));
+            thread::sleep(time::Duration::from_secs(45));
             if !Path::new(file).exists() {
                 or()
             }
         }
+    }
+
+    fn rm(files: Vec<&str>) {
+        for f in files.iter() {
+            let cmd = s("rm -r ") + f;
+            let r = Command::new("sh")
+                .arg("-c")
+                .arg(&cmd)
+                .stdout(Stdio::piped())
+                .output()
+                .expect("failed to execute process");
+        }
+    }
+
+    fn set(v: Vec<Vec<(String, f64)>>) -> HashSet<String> {
+        let mut out = HashSet::new();
+        for v0 in v.into_iter() {
+            for t in v0.into_iter() {
+                let (st, _) = t;
+                out.insert(st);
+            }
+        }
+        out
+    }
+
+    fn sim(a: &HashSet<String>, b: &HashSet<String>) -> usize {
+        c![v, for v in a.intersection(b)].len()
     }
 
     fn inst() {
@@ -372,15 +507,8 @@ mod tests {
     /// generate a skipgram model for testing things like the nearest neighbor function.
     fn sample_skipgram() {
         inst();
-        let r = Command::new("sh")
-            .arg("-c")
-            .arg("./fasttext skipgram -input sample_text.txt -output sample")
-            .stdout(Stdio::piped())
-            .output()
-            .expect("failed to execute process");
-        println!("{}", String::from_utf8_lossy(&r.stdout));
-        println!("{}", String::from_utf8_lossy(&r.stderr));
-        assert_eq!(r.status.code(), Some(0)); // returns 127 if ./fasttext DNE
+        let model = min_skipgram("sample_text.txt", "sample");
+        println!("Generated skipgram model: {}", model);
     }
 
     #[test]
@@ -406,5 +534,103 @@ mod tests {
         println!("{:?}", out);
         assert_eq!(out.len(), 4);
         assert_eq!(out[0].len(), 1);
+    }
+
+
+    /// Since model generation is stochastic, this function compares results statistically.
+    /// It does so by finding the number of pairwise shared words for a 10 nearest neighbor lookup
+    /// across two models. By generating a series of models from identical versus different function
+    /// calls, we can then see if the different function calls produce models that yield
+    /// statistically different output. The comparison statistic is a two-sample KS test, and
+    /// the test fails if more comparisons are significant than would be expected due to chance.
+    fn test_embedding(min_fn: fn(&str, &str) -> String, reg_fn: fn(&HashMap<&str, &str>), min_name: &str, reg_name: &str) {
+        inst();
+
+        let mut failed = 0;
+        let mut total = 0;
+        let conf = 0.9; // fairly arbitrary, since we're just testing whether the ratio
+        // of significant results is greater than expected at the confidence level (ie ratio
+        // > (1 - conf) ).
+
+        let input = "sample_text.txt";
+        let mut args = HashMap::new();
+        args.insert("input", input);
+        args.insert("output", reg_name);
+
+        // iterate through a set of arbitrary words to compare on.
+        for w in ["friend", "tomorrow", "clear"].iter() {
+            let mut v1 = Vec::new();
+            let mut v2 = Vec::new();
+
+            // since model generation is stochastic, we'll need to compare results statistically.
+            for i in 0..40 {
+                let m1 = min_fn(input, min_name);
+                reg_fn(&args);
+                let m2 = s(min_name) + ".bin";
+
+                v1.push(set(nn(w, &m1, 10)));
+                v2.push(set(nn(w, &m2, 10)));
+                println!("model iteration #: {}", i);
+            }
+
+            let mut self1 = Vec::new();
+            for s1 in v1.iter() {
+                for s2 in v1.iter() {
+                    self1.push(sim(s1, s2))
+                }
+            }
+
+            let mut self2 = Vec::new();
+            for s1 in v2.iter() {
+                for s2 in v2.iter() {
+                    self2.push(sim(s1, s2))
+                }
+            }
+
+            let mut between = Vec::new();
+            for s1 in v1.iter() {
+                for s2 in v2.iter() {
+                    between.push(sim(s1, s2))
+                }
+            }
+
+            // comparison: if the distribution of result pairwise similarities is different from our
+            // different methods (or from the pairwise similarity between them), then the wrappers are
+            // not equivalent. Here we're describing similarity as the number of shared words in the
+            // nearest neighbors response for an arbitrary word.
+            let s1s2 = ks::test(&self1, &self2, conf);
+            let bs1 = ks::test(&between, &self1, conf);
+            let bs2 = ks::test(&between, &self2, conf);
+            total += 3;
+            if s1s2.is_rejected {
+                println!("self1: {:?}\n\nself2: {:?}\n\nbetween: {:?}", self1, self2, between);
+                println!("Self 1 and self 2 are dissimilar. P of difference: {}", s1s2.reject_probability);
+                failed += 1;
+            } else if bs1.is_rejected {
+                println!("self1: {:?}\n\nself2: {:?}\n\nbetween: {:?}", self1, self2, between);
+                println!("Between and self 1 are dissimilar. P of difference: {}", bs1.reject_probability);
+                failed = 1;
+            } else if bs2.is_rejected {
+                println!("self1: {:?}\n\nself2: {:?}\n\nbetween: {:?}", self1, self2, between);
+                println!("Between and self 2 are dissimilar. P of difference: {}", bs2.reject_probability);
+                failed = 1;
+            }
+        }
+        let r1 = s(min_name) + "*";
+        let r2 = s(reg_name) + "*";
+        rm(vec![&r1, &r2]);
+        if ((total - failed) as f64 / total as f64) < conf {
+            panic!("Test failed")
+        }
+    }
+
+    #[test]
+    fn test_skipgram() {
+        test_embedding(min_skipgram, skipgram, "test_min_skipgram", "test_skipgram");
+    }
+
+    #[test]
+    fn test_cbow() {
+        test_embedding(min_cbow, cbow, "test_min_cbow", "test_cbow");
     }
 }

@@ -1,7 +1,8 @@
 [package]
 name = "fast_text"
-version = "0.1.0" # matches with the version of fastText this ports
+version = "0.1.0" # matches with the version of fastText this binds to
 authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
 
 [dependencies]
 cute = "0.3.0"
+kolmogorov_smirnov = "1.1.0"

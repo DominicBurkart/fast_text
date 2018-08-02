@@ -485,7 +485,6 @@ mod tests {
         check_exists("sample.bin", sample_skipgram);
     }
 
-    #[test]
     fn test_install() {
         let rv = install();
         for r in rv.iter() {
@@ -625,7 +624,8 @@ mod tests {
     }
 
     #[test]
-    fn suite() {
+    fn suite() { // done in sequence to avoid concurrency errors with the rust IO
+        test_install();
         test_nn(); // fails if nearest neighbors doesn't work.
         test_embedding(min_skipgram, skipgram, "test_min_skipgram", "test_skipgram");
         test_embedding(min_cbow, cbow, "test_min_cbow", "test_cbow");

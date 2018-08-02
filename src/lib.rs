@@ -27,7 +27,6 @@ pub fn install() -> Vec<Output> {
             s("rm -r fastText-") + VERSION,
             s("rm v") + VERSION + ".zip"
         ];
-        Command::new("sh").arg("-c").arg("rm fasttext"); // if fasttext exists, remove it
         c![
             Command::new("sh")
                 .arg("-c")
@@ -45,7 +44,7 @@ pub fn install() -> Vec<Output> {
 fn wrap_install(cmds: &str) -> Output {
     let r = Command::new("sh")
         .arg("-c")
-        .arg(s("fasttext ") + cmds)
+        .arg(s("./fasttext ") + cmds)
         .stdout(Stdio::piped())
         .output()
         .expect("failed to execute process");
@@ -628,13 +627,11 @@ mod tests {
 
     #[test]
     fn test_skipgram() {
-        thread::sleep(time::Duration::from_secs(10)); // avoids error caused by concurrent run of other tests
         test_embedding(min_skipgram, skipgram, "test_min_skipgram", "test_skipgram");
     }
 
     #[test]
     fn test_cbow(){
-        thread::sleep(time::Duration::from_secs(10)); // avoids error caused by concurrent run of other tests
         test_embedding(min_cbow, cbow, "test_min_cbow", "test_cbow");
     }
 }

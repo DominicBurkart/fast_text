@@ -310,7 +310,7 @@ pub fn cbow(args: &HashMap<&str, &str>) {
 ///  -dsub               size of each sub-vector [2]
 pub fn min_skipgram(input: &str, output: &str) -> String {
     let st = s("skipgram -input ") + input + " -output " + output;
-    o = wrap_install(&st);
+    let o = wrap_install(&st);
     if o.status.success() {
         s(output) + ".bin"
     } else {

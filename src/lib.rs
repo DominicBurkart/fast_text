@@ -1,7 +1,8 @@
-use std::process::{Command, Output, Stdio};
 
 #[macro_use(c)]
 extern crate cute;
+use std::process::{Command, Output, Stdio};
+
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const DEBUG: bool = true;
@@ -323,9 +324,33 @@ pub fn analogies() {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use std::path::Path;
+    use std::{thread, time};
+    use std::process::{Command, Stdio};
+
+    static mut INSTALLED: bool = false;
+    static mut SAMPLE_SKIPGRAM: bool = false;
+
+    fn check_exists(file: &str, or: fn()) {
+        if !Path::new(file).exists() {
+            thread::sleep(time::Duration::from_secs(55));
+            if !Path::new(file).exists() {
+                or()
+            }
+        }
+    }
+
+    fn inst() {
+        check_exists("fasttext", ||{install();});
+    }
+
+    fn samp() {
+        check_exists("sample.bin", sample_skipgram);
+    }
+
+    #[test]
     fn test_install() {
-        use std::process::{Command, Stdio};
-        use install;
         let rv = install();
         for r in rv.iter() {
             println!("{}", String::from_utf8_lossy(&r.stdout));
@@ -346,7 +371,7 @@ mod tests {
 
     /// generate a skipgram model for testing things like the nearest neighbor function.
     fn sample_skipgram() {
-        use std::process::{Command, Stdio};
+        inst();
         let r = Command::new("sh")
             .arg("-c")
             .arg("./fasttext skipgram -input sample_text.txt -output sample")
@@ -360,10 +385,7 @@ mod tests {
 
     #[test]
     fn test_nn() {
-        use nn;
-
-        test_install(); // tests that the installation function works
-        sample_skipgram(); // generates a sample skipgram model for this test
+        samp();
 
         let out = nn("lesbian", "sample.bin", 10);
         println!("{:?}", out);
@@ -385,4 +407,22 @@ mod tests {
         assert_eq!(out.len(), 4);
         assert_eq!(out[0].len(), 1);
     }
+
+//    #[bench] // todo this doesn't work with rust stable yet
+//    fn bench_nn() {
+//
+//        samp();
+//
+//        if !INSTALLED {
+//            install();
+//            INSTALLED = true;
+//        }
+//        if !SAMPLE_SKIPGRAM {
+//            sample_skipgram(); // generates a sample skipgram model for this test
+//            SAMPLE_SKIPGRAM = true;
+//        }
+//
+//        b.iter(|| nn("optimism", "sample.bin", 10));
+//        b.iter(|| nn("dog", "sample.bin", 3));
+//    }
 }

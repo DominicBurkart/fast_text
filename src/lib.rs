@@ -343,7 +343,6 @@ mod tests {
         println!("{}", String::from_utf8_lossy(&r.stdout));
         println!("{}", String::from_utf8_lossy(&r.stderr));
         assert_eq!(r.status.code(), Some(1)); // returns 127 if ./fasttext DNE
-        sample_skipgram();
     }
 
     /// generate a skipgram model for testing things like the nearest neighbor function.

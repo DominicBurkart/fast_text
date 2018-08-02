@@ -310,10 +310,11 @@ pub fn cbow(args: &HashMap<&str, &str>) {
 ///  -dsub               size of each sub-vector [2]
 pub fn min_skipgram(input: &str, output: &str) -> String {
     let st = s("skipgram -input ") + input + " -output " + output;
-    if wrap_install(&st).status.success() {
+    o = wrap_install(&st);
+    if o.status.success() {
         s(output) + ".bin"
     } else {
-        panic!("Min_skipgram failed with given input: {}", st)
+        panic!("Min_skipgram failed with given input: {} \noutput: {:?}", st, o)
     }
 }
 
@@ -443,7 +444,7 @@ mod tests {
 
     fn check_exists(file: &str, or: fn()) {
         if !Path::new(file).exists() {
-            thread::sleep(time::Duration::from_secs(45));
+            thread::sleep(time::Duration::from_secs(60));
             if !Path::new(file).exists() {
                 or()
             }
@@ -485,6 +486,7 @@ mod tests {
         check_exists("sample.bin", sample_skipgram);
     }
 
+    #[test]
     fn test_install() {
         let rv = install();
         for r in rv.iter() {
@@ -511,6 +513,7 @@ mod tests {
         println!("Generated skipgram model: {}", model);
     }
 
+    #[test]
     fn test_nn() {
         samp();
 
@@ -547,9 +550,9 @@ mod tests {
 
         let mut failed = 0;
         let mut total = 0;
-        let conf = 0.9; // fairly arbitrary, since we're just testing whether the ratio
-        // of significant results is greater than expected at the confidence level (ie ratio sig
-        // > (1 - conf) ).
+        let conf = 0.9; // fairly arbitrary if iters is large enough, since we're just testing
+        // whether the ratio of significant results is greater than expected at the confidence level
+        // (ie ratio sig > (1 - conf) ).
 
         let input = "sample_text.txt";
         let mut args = HashMap::new();
@@ -557,7 +560,7 @@ mod tests {
         args.insert("output", reg_name);
 
         // iterate through a set of arbitrary words to compare on.
-        for w in ["friend", "tomorrow", "clear"].iter() {
+        for w in ["friend"].iter(){//, "tomorrow", "clear"].iter() {
             let mut v1 = Vec::new();
             let mut v2 = Vec::new();
 
@@ -624,10 +627,14 @@ mod tests {
     }
 
     #[test]
-    fn suite() { // done in sequence to avoid concurrency errors with the rust IO
-        test_install();
-        test_nn(); // fails if nearest neighbors doesn't work.
+    fn test_skipgram() {
+        thread::sleep(time::Duration::from_secs(10)); // avoids error caused by concurrent run of other tests
         test_embedding(min_skipgram, skipgram, "test_min_skipgram", "test_skipgram");
+    }
+
+    #[test]
+    fn test_cbow(){
+        thread::sleep(time::Duration::from_secs(10)); // avoids error caused by concurrent run of other tests
         test_embedding(min_cbow, cbow, "test_min_cbow", "test_cbow");
     }
 }

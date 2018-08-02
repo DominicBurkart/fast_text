@@ -21,7 +21,7 @@ script:
 - cargo build
 - cargo test
 - |
-      if [ [ "$TRAVIS_OS_NAME" == "linux"] && [ "$TRAVIS_OS_NAME" == "stable" ] ]; then
+      if [ [ "$TRAVIS_OS_NAME" == "linux"] ]; then
         cargo install cargo-kcov
         cargo kcov --print-install-kcov-sh | sh
         cargo run -- kcov --verbose --no-clean-rebuild --lib --coveralls

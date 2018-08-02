@@ -363,6 +363,7 @@ mod tests {
     fn test_nn() {
         use nn;
 
+        test_install();
         sample_skipgram();
 
         let out = nn("lesbian", "sample.bin", 10);

@@ -538,7 +538,7 @@ mod tests {
 
 
     /// Since model generation is stochastic, this function compares results statistically.
-    /// It does so by finding the number of pairwise shared words for a 10 nearest neighbor lookup
+    /// It does so by finding the number of pairwise shared words for a nearest neighbor lookup
     /// across two models. By generating a series of models from identical versus different function
     /// calls, we can then see if the different function calls produce models that yield
     /// statistically different output. The comparison statistic is a two-sample KS test, and
@@ -549,7 +549,7 @@ mod tests {
         let mut failed = 0;
         let mut total = 0;
         let conf = 0.9; // fairly arbitrary, since we're just testing whether the ratio
-        // of significant results is greater than expected at the confidence level (ie ratio
+        // of significant results is greater than expected at the confidence level (ie ratio sig
         // > (1 - conf) ).
 
         let input = "sample_text.txt";
@@ -619,7 +619,7 @@ mod tests {
         let r1 = s(min_name) + "*";
         let r2 = s(reg_name) + "*";
         rm(vec![&r1, &r2]);
-        if ((total - failed) as f64 / total as f64) < conf {
+        if (failed as f64 / total as f64) > (1. - conf) {
             panic!("Test failed")
         }
     }

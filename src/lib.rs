@@ -551,7 +551,7 @@ mod tests {
         let mut total = 0;
         let conf = 0.9; // fairly arbitrary if iters is large enough, since we're just testing
         // whether the ratio of significant results is greater than expected at the confidence level
-        // (ie ratio sig > (1 - conf) ).
+        // (ie ratio sig > (1 - conf)).
 
         let input = "sample_text.txt";
         let mut args = HashMap::new();
@@ -559,7 +559,7 @@ mod tests {
         args.insert("output", reg_name);
 
         // iterate through a set of arbitrary words to compare on.
-        for w in ["friend"].iter(){//, "tomorrow", "clear"].iter() {
+        for w in ["friend", "tomorrow", "clear"].iter() {
             let mut v1 = Vec::new();
             let mut v2 = Vec::new();
 

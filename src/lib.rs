@@ -49,7 +49,7 @@ fn wrap_install(cmds: &str) -> Output {
         .stdout(Stdio::piped())
         .output()
         .expect("failed to execute process");
-    if r.status.code() == Some(127) && !Path::new("fasttext").exists() {
+    if !r.status.success() && !Path::new("fasttext").exists() {
         let inst_resps = install();
         for ir in inst_resps.iter() {
             assert!(ir.status.success()); // panic if installation failed

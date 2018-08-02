@@ -323,7 +323,6 @@ pub fn analogies() {
 
 #[cfg(test)]
 mod tests {
-    #[test]
     fn test_install() {
         use std::process::{Command, Stdio};
         use install;
@@ -363,8 +362,8 @@ mod tests {
     fn test_nn() {
         use nn;
 
-        test_install();
-        sample_skipgram();
+        test_install(); // tests that the installation function works
+        sample_skipgram(); // generates a sample skipgram model for this test
 
         let out = nn("lesbian", "sample.bin", 10);
         println!("{:?}", out);

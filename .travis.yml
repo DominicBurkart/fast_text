@@ -19,7 +19,6 @@ addons:
 
 script:
 - cargo build
-- cargo bench
 - cargo test
 - |
       if [ [ "$TRAVIS_OS_NAME" == "linux"] && [ "$TRAVIS_OS_NAME" == "stable" ] ]; then

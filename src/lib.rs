@@ -408,21 +408,4 @@ mod tests {
         assert_eq!(out[0].len(), 1);
     }
 
-//    #[bench] // todo this doesn't work with rust stable yet
-//    fn bench_nn() {
-//
-//        samp();
-//
-//        if !INSTALLED {
-//            install();
-//            INSTALLED = true;
-//        }
-//        if !SAMPLE_SKIPGRAM {
-//            sample_skipgram(); // generates a sample skipgram model for this test
-//            SAMPLE_SKIPGRAM = true;
-//        }
-//
-//        b.iter(|| nn("optimism", "sample.bin", 10));
-//        b.iter(|| nn("dog", "sample.bin", 3));
-//    }
 }

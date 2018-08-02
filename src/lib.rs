@@ -559,12 +559,12 @@ mod tests {
         args.insert("output", reg_name);
 
         // iterate through a set of arbitrary words to compare on.
-        for w in ["friend", "tomorrow", "clear"].iter() {
+        for w in ["friend"].iter() {//, "tomorrow", "clear"].iter() {
             let mut v1 = Vec::new();
             let mut v2 = Vec::new();
 
             // since model generation is stochastic, we'll need to compare results statistically.
-            for i in 0..40 {
+            for i in 0..12 {
                 let m1 = min_fn(input, min_name);
                 reg_fn(&args);
                 let m2 = s(min_name) + ".bin";

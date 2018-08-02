@@ -4,8 +4,6 @@ os: linux
 language: rust
 rust:
   - stable
-  - beta
-  - nightly
 cache:
   - cargo
   - apt

@@ -19,7 +19,7 @@ addons:
 
 script:
 - cargo build
-- cargo test
+- cargo test -- --nocapture
 - |
       if [ [ "$TRAVIS_OS_NAME" == "linux"] ]; then
         cargo install cargo-kcov

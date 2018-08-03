@@ -20,5 +20,5 @@ script:
 #- cargo test -- --nocapture
 - cargo install cargo-kcov
 - cargo kcov --print-install-kcov-sh | sh
-- sh beep & cargo kcov --verbose --lib --coveralls
+- travis_wait cargo kcov --verbose --lib --coveralls
 - bash <(curl -s https://codecov.io/bash)

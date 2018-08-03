@@ -1,5 +1,0 @@
-for i in {1..6}
-do
-	echo "beep"
-	sleep 300
-done

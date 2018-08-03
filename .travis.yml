@@ -17,11 +17,8 @@ addons:
 
 script:
 - cargo build
-- cargo test -- --nocapture
-- |
-      if [ [ "$TRAVIS_OS_NAME" == "linux"] ]; then
-        cargo install cargo-kcov
-        cargo kcov --print-install-kcov-sh | sh
-        cargo run -- kcov --verbose --no-clean-rebuild --lib --coveralls
-        bash <(curl -s https://codecov.io/bash)
-      fi
+- cargo test
+- cargo install cargo-kcov
+- cargo kcov --print-install-kcov-sh | sh
+- cargo kcov --verbose --lib --coveralls
+- bash <(curl -s https://codecov.io/bash)

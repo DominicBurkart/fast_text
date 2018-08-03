@@ -561,7 +561,7 @@ mod tests {
             let mut v2 = Vec::new();
 
             // since model generation is stochastic, we'll need to compare results statistically.
-            for i in 0..12 {
+            for i in 0..18 {
                 let m1 = min_fn(input, min_name);
                 reg_fn(&args);
                 let m2 = s(min_name) + ".bin";

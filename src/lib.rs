@@ -14,7 +14,7 @@ fn s(v: &str) -> String {
     v.to_string()
 }
 
-/// installs fastText
+/// Installs fastText from the archive on Facebook's github.
 pub fn install() -> Vec<Output> {
     if cfg!(target_os = "windows") {
         unimplemented!("Windows support not yet enabled")
@@ -60,7 +60,9 @@ fn wrap_install(cmds: &str) -> Output {
     r
 }
 
-/// Interface for the supervised learning algorithm. Documentation from fastText:
+/// Interface for fastText's supervised learning algorithm.
+///
+/// Documentation from fastText:
 ///
 ///The following arguments are mandatory:
 ///  -input              training file path
@@ -101,7 +103,9 @@ pub fn supervised(args: &HashMap<&str, &str>) {
     gen_mod(s("supervised"), args);
 }
 
-/// Interface to shrink a model's memory requirements. Full interface from fastText:
+/// Interface to shrink a model's memory requirements.
+///
+/// Full interface from fastText:
 ///
 ///usage: fasttext quantize <args>
 ///
@@ -145,7 +149,9 @@ pub fn quantize(args: &HashMap<&str, &str>) {
 }
 
 
-/// Classify each line in an input file. Documentation from fastText:
+/// Classify each line in an input file.
+///
+/// Documentation from fastText:
 ///
 /// usage: fasttext predict[-prob] <model> <test-data> [<k>]
 ///
@@ -267,7 +273,9 @@ pub fn cbow(args: &HashMap<&str, &str>) {
     gen_mod(s("cbow"), args);
 }
 
-/// Provides minimal functionality for generating skipgrams. Full documentation from fastText:
+/// Provides minimal functionality for generating skipgrams.
+///
+/// Full documentation from fastText:
 ///
 /// The following arguments are mandatory:
 ///  -input              training file path
@@ -315,8 +323,9 @@ pub fn min_skipgram(input: &str, output: &str) -> String {
 }
 
 
-/// Provides minimal functionality for generating a continuous bag of words model. Documentation
-/// from fastText:
+/// Provides minimal functionality for generating a continuous bag of words model.
+///
+/// Documentation from fastText:
 ///
 /// The following arguments are mandatory:
 ///  -input              training file path
@@ -363,8 +372,9 @@ pub fn min_cbow(input: &str, output: &str) -> String {
 }
 
 
-/// Nearest neighbors. Input of "words" are single words separated by spaces. Full documentation
-/// from FastText:
+/// Nearest neighbors. Input of "words" are single words separated by spaces.
+///
+/// Full documentation from FastText:
 ///
 /// usage: fasttext nn <model> <k>
 ///
@@ -419,6 +429,8 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
     v0
 }
 
+/// Access to the analogies function.
+///
 /// Documentation from fastText:
 ///
 /// usage: fasttext analogies <model> <k>
@@ -427,6 +439,7 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
 ///  <k>          (optional; 10 by default) predict top k labels
 pub fn analogies(args: &HashMap<&str, &str>) {
     gen_mod(s("analogies"), args);
+    unimplemented!(); // todo
 }
 
 #[cfg(test)]

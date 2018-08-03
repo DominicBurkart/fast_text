@@ -14,11 +14,12 @@ addons:
       - libcurl4-openssl-dev
       - libelf-dev
       - libdw-dev
+      - libbfd-dev
 
 script:
 - cargo build
 #- cargo test -- --nocapture
 - cargo install cargo-kcov
 - cargo kcov --print-install-kcov-sh | sh
-- cargo kcov --verbose --lib --coveralls
+- (sh beep) & cargo kcov --verbose --lib --coveralls
 - bash <(curl -s https://codecov.io/bash)

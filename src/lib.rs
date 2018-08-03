@@ -439,7 +439,7 @@ mod tests {
 
     fn check_exists(file: &str, or: fn()) {
         if !Path::new(file).exists() {
-            thread::sleep(time::Duration::from_secs(60));
+            thread::sleep(time::Duration::from_secs(30));
             if !Path::new(file).exists() {
                 or()
             }
@@ -624,11 +624,13 @@ mod tests {
 
     #[test]
     fn test_skipgram() {
+        inst();
         test_embedding(min_skipgram, skipgram, "test_min_skipgram", "test_skipgram");
     }
 
     #[test]
     fn test_cbow(){
+        inst();
         test_embedding(min_cbow, cbow, "test_min_cbow", "test_cbow");
     }
 }

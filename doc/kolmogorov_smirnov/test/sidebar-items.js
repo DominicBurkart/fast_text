@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["calculate_critical_value","Calculate the critical value for the two sample Kolmogorov-Smirnov test."],["test","Perform a two sample Kolmogorov-Smirnov test on given samples."],["test_f64","Perform a two sample Kolmogorov-Smirnov test on given f64 samples."]],"struct":[["TestResult","Two sample test result."]]});

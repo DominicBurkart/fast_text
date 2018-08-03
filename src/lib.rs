@@ -554,8 +554,9 @@ mod tests {
         args.insert("input", input);
         args.insert("output", reg_name);
 
-        // iterate through a set of arbitrary words to compare on.
-        for w in ["friend", "tomorrow"].iter() {
+        // Would iterate through a set of arbitrary words to compare on. Due to time constraints,
+        // just use one word.
+        for w in ["friend"].iter() {
             let mut v1 = Vec::new();
             let mut v2 = Vec::new();
 

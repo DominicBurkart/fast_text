@@ -7,7 +7,7 @@ use std::path::Path;
 use std::process::{Command, Output, Stdio};
 
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &'static str = "0.1.0"; // fastText archive version to pull.
 const DEBUG: bool = false;
 
 fn s(v: &str) -> String {
@@ -390,10 +390,10 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
         .stdout(Stdio::piped())
         .output()
         .expect("failed to execute process");
-    if r.status.code() == Some(127) { // returns 127 if ./fasttext DNE
+    if !r.status.success() && !Path::new("./fasttext").exists(){
         let ir = install();
         for o in ir.iter() {
-            if !r.status.success() { panic!("Missing files / executable in call to nn"); }
+            if !o.status.success() { panic!("Missing files / executable in call to nn"); }
         }
     }
     if DEBUG { println!("{:?}", r); }
@@ -437,9 +437,9 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
 ///
 ///  <model>      model filename
 ///  <k>          (optional; 10 by default) predict top k labels
-pub fn analogies(args: &HashMap<&str, &str>) {
-    gen_mod(s("analogies"), args);
+pub fn analogies(analogy: &str, model: &str, k: u32) {
     unimplemented!(); // todo
+    let cmd = s("echo ") + analogy + " | ./fasttext analogies " + model + " " + &k.to_string();
 }
 
 #[cfg(test)]

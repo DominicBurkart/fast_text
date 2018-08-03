@@ -16,7 +16,7 @@ addons:
       - libdw-dev
 
 script:
-#- cargo build
+- cargo build
 #- cargo test -- --nocapture
 - cargo install cargo-kcov
 - cargo kcov --print-install-kcov-sh | sh

@@ -2,7 +2,7 @@
 name = "fast_text"
 version = "0.1.0" # matches with the version of fastText this binds to
 authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
-license = "BSD"
+license = "MIT"
 description = "High-level Rust binding for Facebook's FastText package."
 repository = "https://github.com/DominicBurkart/fast_text"
 keywords = ["nlp", "word-embedding", "machine-learning", "ml", "fasttext"]

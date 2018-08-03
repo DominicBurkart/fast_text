@@ -8,7 +8,7 @@ use std::process::{Command, Output, Stdio};
 
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 
 fn s(v: &str) -> String {
     v.to_string()

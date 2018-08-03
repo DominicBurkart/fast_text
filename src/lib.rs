@@ -60,7 +60,7 @@ fn wrap_install(cmds: &str) -> Output {
     r
 }
 
-/// Minimal interface for the supervised learning algorithm. Documentation from fastText:
+/// Interface for the supervised learning algorithm. Documentation from fastText:
 ///
 ///The following arguments are mandatory:
 ///  -input              training file path
@@ -97,12 +97,11 @@ fn wrap_install(cmds: &str) -> Output {
 ///  -qnorm              quantizing the norm separately [0]
 ///  -qout               quantizing the classifier [0]
 ///  -dsub               size of each sub-vector [2]
-pub fn supervised() {
-    let r = wrap_install("todo");
-    unimplemented!()
+pub fn supervised(args: &HashMap<&str, &str>) {
+    gen_mod(s("supervised"), args);
 }
 
-/// Minimal interface to shrink a model's memory requirements. Full interface from fastText:
+/// Interface to shrink a model's memory requirements. Full interface from fastText:
 ///
 ///usage: fasttext quantize <args>
 ///
@@ -141,10 +140,8 @@ pub fn supervised() {
 ///  -qnorm              quantizing the norm separately [0]
 ///  -qout               quantizing the classifier [0]
 ///  -dsub               size of each sub-vector [2]
-pub fn quantize(input: &str, output: &str) {
-    let s = s("quantize -input ") + input + " -output " + output;
-    let r = wrap_install(&s);
-    unimplemented!()
+pub fn quantize(args: &HashMap<&str, &str>) {
+    gen_mod(s("quantize"), args);
 }
 
 
@@ -428,9 +425,8 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
 ///
 ///  <model>      model filename
 ///  <k>          (optional; 10 by default) predict top k labels
-pub fn analogies() {
-    let r = wrap_install("todo");
-    unimplemented!()
+pub fn analogies(args: &HashMap<&str, &str>) {
+    gen_mod(s("analogies"), args);
 }
 
 #[cfg(test)]

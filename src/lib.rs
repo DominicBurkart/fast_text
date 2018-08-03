@@ -559,7 +559,7 @@ mod tests {
         args.insert("output", reg_name);
 
         // iterate through a set of arbitrary words to compare on.
-        for w in ["friend"].iter() {//, "tomorrow", "clear"].iter() {
+        for w in ["friend", "tomorrow", "clear"].iter() {
             let mut v1 = Vec::new();
             let mut v2 = Vec::new();
 
@@ -610,11 +610,11 @@ mod tests {
             } else if bs1.is_rejected {
                 println!("self1: {:?}\n\nself2: {:?}\n\nbetween: {:?}", self1, self2, between);
                 println!("Between and self 1 are dissimilar. P of difference: {}", bs1.reject_probability);
-                failed = 1;
+                failed += 1;
             } else if bs2.is_rejected {
                 println!("self1: {:?}\n\nself2: {:?}\n\nbetween: {:?}", self1, self2, between);
                 println!("Between and self 2 are dissimilar. P of difference: {}", bs2.reject_probability);
-                failed = 1;
+                failed += 1;
             }
         }
         let r1 = s(min_name) + "*";

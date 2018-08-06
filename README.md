@@ -10,3 +10,6 @@ large datasets. This library allows rust programs to build and interface
  with Facebook's fastText library. Docs are hosted at [Docs.rs/fast_text](https://docs.rs/fast_text).
 
 See the fastText [website](https://fasttext.cc/) and [codebase](https://github.com/facebookresearch/fastText) for more information.
+
+Implementation notes:
+- Does not currently support the analogy function

@@ -7,8 +7,10 @@ use std::path::Path;
 use std::process::{Command, Output, Stdio};
 
 
-const VERSION: &'static str = "0.1.0"; // fastText archive version to pull.
-const DEBUG: bool = false;
+const VERSION: &'static str = "0.1.0";
+// fastText archive version to pull.
+
+const DEBUG: bool = true;
 
 fn s(v: &str) -> String {
     v.to_string()
@@ -16,18 +18,15 @@ fn s(v: &str) -> String {
 
 /// Installs fastText from the archive on Facebook's github.
 pub fn install() -> Vec<Output> {
-    if cfg!(target_os = "windows") {
-        unimplemented!("Windows support not yet enabled")
-    } else {
-        let cmds = [
-            s("wget https://github.com/facebookresearch/fastText/archive/v0.1.0.zip"),
-            s("unzip v") + VERSION + ".zip",
-            s("cd fastText-") + VERSION + "; make",
-            s("mv fastText-") + VERSION + "/fasttext .",
-            s("rm -r fastText-") + VERSION,
-            s("rm v") + VERSION + ".zip"
-        ];
-        c![
+    let cmds = [
+        s("wget https://github.com/facebookresearch/fastText/archive/v0.1.0.zip"),
+        s("unzip v") + VERSION + ".zip",
+        s("cd fastText-") + VERSION + "; make",
+        s("mv fastText-") + VERSION + "/fasttext .",
+        s("rm -r fastText-") + VERSION,
+        s("rm v") + VERSION + ".zip"
+    ];
+    c![
             Command::new("sh")
                 .arg("-c")
                 .arg(c)
@@ -36,31 +35,23 @@ pub fn install() -> Vec<Output> {
                 .expect("failed to execute process"),
 
             for c in cmds.iter()
-        ]
-    }
+     ]
 }
 
 /// runs a fastText command and, if it fails because fastText DNE, installs fastText and tries again.
 fn wrap_install(cmds: &str) -> Output {
-    let r = Command::new("sh")
-        .arg("-c")
-        .arg(s("./fasttext ") + cmds)
-        .stdout(Stdio::piped())
-        .output()
-        .expect("failed to execute process");
-    if !r.status.success() && !Path::new("fasttext").exists() {
-        let inst_resps = install();
-        for ir in inst_resps.iter() {
-            assert!(ir.status.success()); // panic if installation failed
-        }
-        println!("Recursing in wrap_install with command: {}", cmds);
-        return wrap_install(cmds); // this technique is inefficient and may fail if the working
-        // directory is changed by other processes.
-    }
-    r
+    let st = s("./fasttext ") + cmds;
+    run_cmd(&st)
 }
 
 /// Interface for fastText's supervised learning algorithm.
+///
+/// Each line of input should have labels included as such:
+///
+/// __label__sauce __label__cheese How much does potato starch affect a cheese sauce recipe?
+/// __label__food-safety __label__acidity Dangerous pathogens capable of growing in acidic environments
+/// __label__cast-iron __label__stove How do I cover up the white spots on my cast iron stove?
+///
 ///
 /// Documentation from fastText:
 ///
@@ -151,6 +142,9 @@ pub fn quantize(args: &HashMap<&str, &str>) {
 
 /// Classify each line in an input file.
 ///
+/// output: a vector of the same length as the number of lines in the input
+/// file where each length is value is a  k-length vector of labels for the text from the line.
+///
 /// Documentation from fastText:
 ///
 /// usage: fasttext predict[-prob] <model> <test-data> [<k>]
@@ -158,11 +152,61 @@ pub fn quantize(args: &HashMap<&str, &str>) {
 ///  <model>      model filename
 ///  <test-data>  test data filename (if -, read from stdin)
 ///  <k>          (optional; 1 by default) predict top k labels
-pub fn predict(model: &str, inp: &str, k: u32) -> Vec<f64> {
+pub fn predict(model: &str, inp: &str, k: u32) -> Vec<Vec<String>> {
+    let mut out = Vec::new();
     let s = s("predict ") + model + " " + inp + " " + &k.to_string();
     let r = wrap_install(&s);
-    c![p.parse::<f64>().unwrap(),
-     for p in String::from_utf8_lossy(&r.stdout).split("\n")]
+    for p in String::from_utf8_lossy(&r.stdout).split("\n") {
+        let mut innerv = Vec::new();
+        for v in p.split(" ") {
+            if v != "" {
+                innerv.push(v.to_string());
+            }
+        }
+        if innerv.len() != 0 {
+            out.push(innerv);
+        }
+    }
+    out
+}
+
+/// Classify each line in an input file with probabilities of labels.
+///
+/// Documentation from fastText:
+///
+/// usage: fasttext predict[-prob] <model> <test-data> [<k>]
+///
+///  <model>      model filename
+///  <test-data>  test data filename (if -, read from stdin)
+///  <k>          (optional; 1 by default) predict top k labels
+pub fn predict_prob(model: &str, inp: &str, k: u32) -> Vec<Vec<(String, f64)>> {
+    fn ext(l: &str) -> Vec<(String, f64)> {
+        let mut out = Vec::new();
+        let mut f = true;
+        let mut label = "";
+        for u in l.split(" ") {
+            if u != "" {
+                if f {
+                    label = u;
+                } else {
+                    out.push((label.to_string(), u.parse::<f64>().unwrap()));
+                }
+                f = !f;
+            }
+        }
+        if DEBUG { assert!(f); } // last value is a prob, not a label
+        out
+    }
+    let mut out = Vec::new();
+    let s = s("predict-prob ") + model + " " + inp + " " + &k.to_string();
+    let r = wrap_install(&s);
+    for l in String::from_utf8_lossy(&r.stdout).split("\n") {
+        let v = ext(l);
+        if v.len() > 0 {
+            out.push(v);
+        }
+    }
+    out
 }
 
 
@@ -372,33 +416,7 @@ pub fn min_cbow(input: &str, output: &str) -> String {
 }
 
 
-/// Nearest neighbors. Input of "words" are single words separated by spaces.
-///
-/// Full documentation from FastText:
-///
-/// usage: fasttext nn <model> <k>
-///
-///  <model>      model filename
-///  <k>          (optional; 10 by default) predict top k labels
-pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
-    if DEBUG { println!("NN begun") };
-    let cmd = s("echo ") + words + " | ./fasttext nn " + model + " " + &k.to_string();
-    if DEBUG { println!("cmd: {}", cmd); }
-    let r = Command::new("sh")
-        .arg("-c")
-        .arg(cmd)
-        .stdout(Stdio::piped())
-        .output()
-        .expect("failed to execute process");
-    if !r.status.success() && !Path::new("./fasttext").exists(){
-        let ir = install();
-        for o in ir.iter() {
-            if !o.status.success() { panic!("Missing files / executable in call to nn"); }
-        }
-    }
-    if DEBUG { println!("{:?}", r); }
-    let stdout = String::from_utf8_lossy(&r.stdout);
-    let sm = "Query word? ";
+fn resp(sm: &str, stdout: std::borrow::Cow<str>) -> Vec<Vec<(String, f64)>> {
     let mut v0 = Vec::new();
     if DEBUG {
         println!("Beginning match iteration");
@@ -416,7 +434,7 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
             } else if lar.len() == 4 && first {
                 v1.push((lar[2].to_string(), lar[3].parse::<f64>().unwrap()));
                 first = false;
-            } else if l == "Query word? " || (lar.len() == 4 && !first) {
+            } else if l == sm || (lar.len() == 4 && !first) {
                 break;
             } else {
                 panic!("misformatted line in input: {}", l);
@@ -429,7 +447,41 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
     v0
 }
 
-/// Access to the analogies function.
+/// runs an arbitrary command and makes sure that the fasttext is set up locally.
+fn run_cmd(cmd: &str) -> Output {
+    if DEBUG { println!("cmd: {}", cmd); }
+    let r = Command::new("sh")
+        .arg("-c")
+        .arg(cmd)
+        .stdout(Stdio::piped())
+        .output()
+        .expect("failed to execute process");
+    if !r.status.success() && !Path::new("./fasttext").exists() {
+        let ir = install();
+        for o in ir.iter() {
+            if !o.status.success() { panic!("Missing files / executable"); }
+        }
+    }
+    if DEBUG { println!("{:?}", r); }
+    r
+}
+
+
+/// Nearest neighbors. Input of "words" are single words separated by spaces.
+///
+/// Full documentation from FastText:
+///
+/// usage: fasttext nn <model> <k>
+///
+///  <model>      model filename
+///  <k>          (optional; 10 by default) predict top k labels
+pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
+    if DEBUG { println!("NN begun") };
+    let cmd = s("echo ") + words + " | ./fasttext nn " + model + " " + &k.to_string();
+    resp("Query word? ", String::from_utf8_lossy(&run_cmd(&cmd).stdout))
+}
+
+/// Access to the analogies function. Not supported.
 ///
 /// Documentation from fastText:
 ///
@@ -437,11 +489,16 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
 ///
 ///  <model>      model filename
 ///  <k>          (optional; 10 by default) predict top k labels
-pub fn analogies(analogy: &str, model: &str, k: u32) {
-    unimplemented!(); // todo
-    let cmd = s("echo ") + analogy + " | ./fasttext analogies " + model + " " + &k.to_string();
+pub fn analogies(analogies: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
+    let cmd = s("echo \"") + analogies + "\" | ./fasttext analogies " + model + " " + &k.to_string();
+    unimplemented!();
+    // just doing the "echo "cmd" | ./fasttext [...]" thing won't work here.
+    resp("Query triplet (A - B + C)? ", String::from_utf8_lossy(&run_cmd(&cmd).stdout))
 }
 
+
+/// the objective for testing here is not to check that the fasttext binary is working as expected,
+/// but that it can be install and that its output can be consistently read.
 #[cfg(test)]
 mod tests {
     extern crate kolmogorov_smirnov as ks;
@@ -574,7 +631,7 @@ mod tests {
             let mut v2 = Vec::new();
 
             // since model generation is stochastic, we'll need to compare results statistically.
-            for i in 0..18 {
+            for i in 0..10 {
                 let m1 = min_fn(input, min_name);
                 reg_fn(&args);
                 let m2 = s(min_name) + ".bin";
@@ -637,13 +694,52 @@ mod tests {
 
     #[test]
     fn test_skipgram() {
-        inst();
         test_embedding(min_skipgram, skipgram, "test_min_skipgram", "test_skipgram");
     }
 
     #[test]
-    fn test_cbow(){
-        inst();
+    fn test_cbow() {
         test_embedding(min_cbow, cbow, "test_min_cbow", "test_cbow");
+    }
+
+    fn test_predict(model: String) {
+        let p = predict(&model, "t.txt", 1);
+        println!("test_predict output: {:?}", p);
+        assert_eq!(p[0].len(), 1);
+        assert_eq!(p.len(), 2);
+
+        let p = predict(&model, "t.txt", 2);
+        println!("test_predict output: {:?}", p);
+        assert_eq!(p[0].len(), 2);
+        assert_eq!(p.len(), 2);
+    }
+
+    fn test_predict_prob(model: String) {
+        let p = predict_prob(&model, "t.txt", 1);
+        println!("output of predict_prob: {:?}", p);
+        assert_eq!(p[0].len(), 1);
+        assert_eq!(p.len(), 2);
+
+        let p = predict_prob(&model, "t.txt", 2);
+        println!("output of predict_prob: {:?}", p);
+        assert_eq!(p[0].len(), 2);
+        assert_eq!(p.len(), 2);
+    }
+
+    #[test]
+    fn test_supervised_and_predicts() {
+        inst();
+
+        let model = "sup";
+
+        let args: HashMap<_, _> = vec![
+            ("input", "sample_text.txt"),
+            ("output", model),
+        ].into_iter().collect();
+
+        supervised(&args);
+
+        test_predict(s(model) + ".bin");
+        test_predict_prob(s(model) + ".bin");
     }
 }

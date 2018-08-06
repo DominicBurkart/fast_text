@@ -1,7 +1,6 @@
 #[macro_use(c)]
 extern crate cute;
 
-use std::{thread, time};
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::{Command, Output, Stdio};
@@ -490,21 +489,70 @@ pub fn nn(words: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
 ///  <model>      model filename
 ///  <k>          (optional; 10 by default) predict top k labels
 pub fn analogies(analogies: &str, model: &str, k: u32) -> Vec<Vec<(String, f64)>> {
-    let cmd = s("echo \"") + analogies + "\" | ./fasttext analogies " + model + " " + &k.to_string();
     unimplemented!();
-    // just doing the "echo "cmd" | ./fasttext [...]" thing won't work here.
+    let cmd = s("echo \"") + analogies + "\" | ./fasttext analogies " + model + " " + &k.to_string();
+    // just doing the "echo "cmd" | ./fasttext [...]" thing won't work here since it just keeps
+    // checking stdin and re-outputting results.
     resp("Query triplet (A - B + C)? ", String::from_utf8_lossy(&run_cmd(&cmd).stdout))
+}
+
+fn parse_vec(cmd: &str, sentence: Option<&str>) -> Vec<Vec<f64>> {
+    let mut out = Vec::new();
+    let mut st = String::from_utf8_lossy(&run_cmd(cmd).stdout).to_string();
+    match sentence {
+        None => (),
+        Some(sent) => {
+            st = st.replace(sent, "");
+        }
+    };
+    for l in st.split("\n") {
+        let mut wordvec = Vec::new();
+        let mut f = true;
+        for t in l.split(" ") {
+            if f {
+                f = false;
+            } else {
+                if t != "" {
+                    wordvec.push(t.parse::<f64>().unwrap());
+                }
+            }
+        }
+        if wordvec.len() > 0 {
+            out.push(wordvec);
+        }
+    }
+    out
+}
+
+/// access to the vectors for a given set of words.
+///
+/// Input: one or more words (separated by spaces)
+/// Output: A vec of word vectors (one for each input word)
+pub fn word_vector(words: &str, model: &str) -> Vec<Vec<f64>> {
+    let cmd = s("echo \"") + words + "\" | ./fasttext print-word-vectors " + model;
+    parse_vec(&cmd, None)
+}
+
+
+/// access to the vectors for a given sentence.
+///
+/// Input: sentence
+/// Output: A vec of a sentence vector
+pub fn sentence_vector(sentence: &str, model: &str) -> Vec<Vec<f64>> {
+    let cmd = s("echo \"") + sentence + "\" | ./fasttext print-sentence-vectors " + model;
+    parse_vec(&cmd, Some(sentence))
 }
 
 
 /// the objective for testing here is not to check that the fasttext binary is working as expected,
 /// but that it can be install and that its output can be consistently read.
+
 #[cfg(test)]
 mod tests {
     extern crate kolmogorov_smirnov as ks;
 
+    use std::{thread, time};
     use std::collections::HashSet;
-    use std::panic;
     use super::*;
 
     fn check_exists(file: &str, or: fn()) {
@@ -519,7 +567,7 @@ mod tests {
     fn rm(files: Vec<&str>) {
         for f in files.iter() {
             let cmd = s("rm -r ") + f;
-            let r = Command::new("sh")
+            Command::new("sh")
                 .arg("-c")
                 .arg(&cmd)
                 .stdout(Stdio::piped())
@@ -617,7 +665,6 @@ mod tests {
 
         // Would iterate through a set of arbitrary words to compare on.
         for w in ["friend", "day", "door"].iter() {
-
             let m1 = min_fn(input, min_name);
             reg_fn(&args);
             let m2 = s(min_name) + ".bin";
@@ -691,5 +738,28 @@ mod tests {
 
         let m = s(model) + "*";
         rm(vec![&m]);
+    }
+
+    #[test]
+    fn test_word_vector() {
+        samp();
+        let v = word_vector("gay math queen", "sample.bin");
+        assert_eq!(v.len(), 3); // three words go in, three wordvecs come out
+
+        let mut hs = HashSet::new();
+        for wv in v.iter() {
+            hs.insert(wv.len());
+        }
+        assert_eq!(hs.len(), 1); // vectors are all the same length
+
+        let v = word_vector("naps", "sample.bin");
+        assert_eq!(v.len(), 1);
+    }
+
+    #[test]
+    fn test_sentence_vector() {
+        samp();
+        let v = sentence_vector("To die, to sleep – to sleep, perchance to dream – ay, there's the rub, for in this sleep of death what dreams may come…", "sample.bin");
+        assert_eq!(v.len(), 1);
     }
 }

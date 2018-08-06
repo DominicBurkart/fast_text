@@ -1,6 +1,6 @@
 [package]
 name = "fast_text"
-version = "0.0.9"
+version = "0.1.1"
 authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
 license = "MIT"
 description = "High-level Rust binding for Facebook's FastText package."

@@ -604,92 +604,39 @@ mod tests {
     }
 
 
-    /// Since model generation is stochastic, this function compares results statistically.
-    /// It does so by finding the number of pairwise shared words for a nearest neighbor lookup
-    /// across two models. By generating a series of models from identical versus different function
-    /// calls, we can then see if the different function calls produce models that yield
-    /// statistically different output. The comparison statistic is a two-sample KS test, and
-    /// the test fails if more comparisons are significant than would be expected due to chance.
+    /// test nearest neighbors for two functions yields valid results.
     fn test_embedding(min_fn: fn(&str, &str) -> String, reg_fn: fn(&HashMap<&str, &str>), min_name: &str, reg_name: &str) {
         inst();
-
-        let mut failed = 0;
-        let mut total = 0;
-        let conf = 0.9; // fairly arbitrary if iters is large enough, since we're just testing
-        // whether the ratio of significant results is greater than expected at the confidence level
-        // (ie ratio sig > (1 - conf)).
 
         let input = "sample_text.txt";
         let mut args = HashMap::new();
         args.insert("input", input);
         args.insert("output", reg_name);
 
-        // Would iterate through a set of arbitrary words to compare on. Due to time constraints,
-        // just use one word.
-        for w in ["friend"].iter() {
-            let mut v1 = Vec::new();
-            let mut v2 = Vec::new();
+        let k = 10;
 
-            // since model generation is stochastic, we'll need to compare results statistically.
-            for i in 0..10 {
-                let m1 = min_fn(input, min_name);
-                reg_fn(&args);
-                let m2 = s(min_name) + ".bin";
+        // Would iterate through a set of arbitrary words to compare on.
+        for w in ["friend", "day", "door"].iter() {
 
-                v1.push(set(nn(w, &m1, 10)));
-                v2.push(set(nn(w, &m2, 10)));
-                println!("model iteration #: {}", i);
+            let m1 = min_fn(input, min_name);
+            reg_fn(&args);
+            let m2 = s(min_name) + ".bin";
+
+            let r1 = nn(w, &m1, k);
+            let r2 = nn(w, &m2, k);
+
+            assert_eq!(r1.len(), r2.len());
+            for i in 0..r1.len() {
+                assert_eq!(r1[i].len(), r2[i].len());
+                assert_eq!(r1[i].len(), k as usize);
             }
 
-            let mut self1 = Vec::new();
-            for s1 in v1.iter() {
-                for s2 in v1.iter() {
-                    self1.push(sim(s1, s2))
-                }
-            }
-
-            let mut self2 = Vec::new();
-            for s1 in v2.iter() {
-                for s2 in v2.iter() {
-                    self2.push(sim(s1, s2))
-                }
-            }
-
-            let mut between = Vec::new();
-            for s1 in v1.iter() {
-                for s2 in v2.iter() {
-                    between.push(sim(s1, s2))
-                }
-            }
-
-            // comparison: if the distribution of result pairwise similarities is different from our
-            // different methods (or from the pairwise similarity between them), then the wrappers are
-            // not equivalent. Here we're describing similarity as the number of shared words in the
-            // nearest neighbors response for an arbitrary word.
-            let s1s2 = ks::test(&self1, &self2, conf);
-            let bs1 = ks::test(&between, &self1, conf);
-            let bs2 = ks::test(&between, &self2, conf);
-            total += 3;
-            if s1s2.is_rejected {
-                println!("self1: {:?}\n\nself2: {:?}\n\nbetween: {:?}", self1, self2, between);
-                println!("Self 1 and self 2 are dissimilar. P of difference: {}", s1s2.reject_probability);
-                failed += 1;
-            } else if bs1.is_rejected {
-                println!("self1: {:?}\n\nself2: {:?}\n\nbetween: {:?}", self1, self2, between);
-                println!("Between and self 1 are dissimilar. P of difference: {}", bs1.reject_probability);
-                failed += 1;
-            } else if bs2.is_rejected {
-                println!("self1: {:?}\n\nself2: {:?}\n\nbetween: {:?}", self1, self2, between);
-                println!("Between and self 2 are dissimilar. P of difference: {}", bs2.reject_probability);
-                failed += 1;
-            }
+            assert!(sim(&set(r1), &set(r2)) > (0.9 * k as f64) as usize);
         }
+
         let r1 = s(min_name) + "*";
         let r2 = s(reg_name) + "*";
         rm(vec![&r1, &r2]);
-        if (failed as f64 / total as f64) > (1. - conf) {
-            panic!("Test failed")
-        }
     }
 
     #[test]
@@ -741,5 +688,8 @@ mod tests {
 
         test_predict(s(model) + ".bin");
         test_predict_prob(s(model) + ".bin");
+
+        let m = s(model) + "*";
+        rm(vec![&m]);
     }
 }

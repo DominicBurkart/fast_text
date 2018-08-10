@@ -1,6 +1,6 @@
 [package]
 name = "fast_text"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
 license = "MIT"
 description = "Binding for Facebook's FastText package."

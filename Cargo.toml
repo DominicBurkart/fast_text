@@ -3,9 +3,12 @@ name = "fast_text"
 version = "0.1.1"
 authors = ["Dominic Burkart <dominicburkart@gmail.com>"]
 license = "MIT"
-description = "High-level Rust binding for Facebook's FastText package."
+description = "Binding for Facebook's FastText package."
 repository = "https://github.com/DominicBurkart/fast_text"
 keywords = ["nlp", "word-embedding", "machine-learning", "ml", "fasttext"]
+
+[badges]
+travis-ci = { repository = "DominicBurkart/fast_text" }
 
 [dependencies]
 cute = "0.3.0"
